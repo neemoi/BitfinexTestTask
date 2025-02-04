@@ -9,6 +9,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<ITestConnector, BitfinexClient>();
+builder.Services.AddSingleton<ITestSocketConnector, BitfinexSocketClient>();
 
 var app = builder.Build();
 
