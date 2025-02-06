@@ -10,6 +10,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitfinexConnectorAPI", "Bit
 		{FD334B24-C450-426E-8719-E0A669972092} = {FD334B24-C450-426E-8719-E0A669972092}
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Library", "Library", "{652B415F-B727-465C-AB99-B8E2C4C0E609}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "API", "API", "{BCD70DE8-FAE3-4652-BD4F-8A2FCB9361AB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{82C7B7BF-4D39-4D1A-AEE6-C6D73EE9C182}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,5 +33,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FD334B24-C450-426E-8719-E0A669972092} = {652B415F-B727-465C-AB99-B8E2C4C0E609}
+		{E051AC0D-576F-4A6F-9024-5E33C571FAC9} = {BCD70DE8-FAE3-4652-BD4F-8A2FCB9361AB}
 	EndGlobalSection
 EndGlobal

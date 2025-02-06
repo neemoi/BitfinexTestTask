@@ -10,6 +10,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<ITestConnector, BitfinexClient>();
 builder.Services.AddSingleton<ITestSocketConnector, BitfinexSocketClient>();
+builder.Services.AddHttpClient<IPortfolioCalculator, PortfolioCalculator>();
 
 var app = builder.Build();
 
