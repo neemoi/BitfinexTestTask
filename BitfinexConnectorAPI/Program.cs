@@ -4,7 +4,7 @@ using BitfinexConnector.Interfaces;
 var builder = WebApplication.CreateBuilder(args);
 
 
-builder.Services.AddControllers();
+builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -21,8 +21,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
-app.UseAuthorization();
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapControllers();
 

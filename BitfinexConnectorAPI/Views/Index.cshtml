@@ -1,0 +1,177 @@
+﻿@model BitfinexConnector.Models.PortfolioBalance
+
+@{
+    ViewData["Title"] = "Баланс портфеля";
+    var lastUpdated = DateTime.Now;
+}
+
+<h2>Баланс портфеля</h2>
+
+<p><strong>Последнее обновление:</strong> @lastUpdated.ToString("dd.MM.yyyy HH:mm:ss")</p>
+
+<table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 50%;">
+    <thead>
+        <tr style="background-color: #f2f2f2;">
+            <th>Валюта</th>
+            <th>Сумма</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td><strong>USDT</strong></td><td>@Model.USDT.ToString("0.##")</td></tr>
+        <tr><td><strong>BTC</strong></td><td>@Model.BTC.ToString("0.######")</td></tr>
+        <tr><td><strong>XRP</strong></td><td>@Model.XRP.ToString("0.##")</td></tr>
+        <tr><td><strong>XMR</strong></td><td>@Model.XMR.ToString("0.##")</td></tr>
+        <tr><td><strong>DASH</strong></td><td>@Model.DASH.ToString("0.##")</td></tr>
+    </tbody>
+</table>
+
+<h3>Дополнительная информация</h3>
+<ul>
+    <li><strong>Общий баланс в USDT:</strong> @Model.USDT.ToString("0.##")</li>
+    <li><strong>Курс BTC/USDT:</strong> @(Model.USDT / Model.BTC).ToString("0.##")</li>
+</ul>
+
+<p style="margin-top: 20px;">
+    <a href="/PortfolioMVC/Index" style="text-decoration: none; background-color: #a078ff; color: white; padding: 10px 15px; border-radius: 5px;">
+        Обновить данные
+    </a>
+</p>
+
+<hr>
+
+<h2>Последние трейды</h2>
+<select id="tradePair">
+    <option value="BTCUSD">BTC/USD</option>
+    <option value="ETHUSD">ETH/USD</option>
+    <option value="XRPUSD">XRP/USD</option>
+</select>
+<button onclick="loadTrades()">Загрузить трейды</button>
+
+<table id="tradesTable" border="1" cellpadding="5" cellspacing="0" style="margin-top: 10px;">
+    <thead>
+        <tr style="background-color: #f2f2f2;">
+            <th>ID</th>
+            <th>Время</th>
+            <th>Цена</th>
+            <th>Объем</th>
+            <th>Тип</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<hr>
+
+<h2>Управление WebSocket</h2>
+
+<label>Выберите валютную пару:</label>
+<select id="socketPair">
+    <option value="BTCUSD">BTC/USD</option>
+    <option value="ETHUSD">ETH/USD</option>
+    <option value="XRPUSD">XRP/USD</option>
+</select>
+
+<button onclick="subscribeTrades()">Подписаться на трейды</button>
+<button onclick="unsubscribeTrades()">Отписаться</button>
+<button onclick="disconnectWebSocket()">Отключить WebSocket</button>
+
+<p id="socketStatus" style="margin-top: 10px;">Статус: <strong>Не подключено</strong></p>
+
+<script>
+    let socket = null;
+
+    async function loadTrades() {
+        const pair = document.getElementById("tradePair").value;
+        const url = `/api/trades/${pair}/10`;
+
+        const response = await fetch(url);
+        const trades = await response.json();
+
+        const table = document.getElementById("tradesTable");
+        const tbody = table.querySelector("tbody");
+        tbody.innerHTML = "";
+
+        if (trades && trades.length > 0) {
+            trades.forEach(trade => {
+                const row = `<tr>
+                    <td>${trade.id}</td>
+                    <td>${new Date(trade.time).toLocaleString()}</td>
+                    <td>${trade.price.toFixed(2)}</td>
+                    <td>${trade.amount}</td>
+                    <td>${trade.side}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        } else {
+            tbody.innerHTML = "<tr><td colspan='5'>Нет данных</td></tr>";
+        }
+
+        table.style.display = "table";
+    }
+
+    async function subscribeTrades() {
+        const pair = document.getElementById("socketPair").value;
+        const url = `/api/WebSocket/subscribe/trades/${pair}`;
+
+        await fetch(url, { method: "POST" });
+
+        document.getElementById("socketStatus").innerHTML = "Статус: <strong>Подключено к WebSocket</strong>";
+
+        socket = new WebSocket("wss://api-pub.bitfinex.com/ws/2");
+
+        socket.onopen = () => {
+            console.log("WebSocket подключен.");
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data[1] && data[1][0]) {
+                const trade = data[1][0];
+                const row = `<tr>
+                    <td>${trade[0]}</td>
+                    <td>${new Date(trade[1]).toLocaleString()}</td>
+                    <td>${trade[3]}</td>
+                    <td>${trade[2]}</td>
+                    <td>${trade[2] > 0 ? 'buy' : 'sell'}</td>
+                </tr>`;
+                const table = document.getElementById("tradesTable");
+                const tbody = table.querySelector("tbody");
+                tbody.innerHTML = row + tbody.innerHTML;
+            }
+        };
+
+        socket.onerror = (error) => {
+            console.error(`WebSocket Error: ${error}`);
+        };
+
+        socket.onclose = () => {
+            console.log("WebSocket отключён.");
+        };
+    }
+
+    async function unsubscribeTrades() {
+        const pair = document.getElementById("socketPair").value;
+        const url = `/api/WebSocket/unsubscribe/trades/${pair}`;
+
+        await fetch(url, { method: "POST" });
+
+        document.getElementById("socketStatus").innerHTML = "Статус: <strong>Отписано от WebSocket</strong>";
+
+        if (socket) {
+            socket.close();
+        }
+    }
+
+    async function disconnectWebSocket() {
+        const url = `/api/WebSocket/disconnect`;
+
+        await fetch(url, { method: "POST" });
+
+        document.getElementById("socketStatus").innerHTML = "Статус: <strong>Отключено</strong>";
+
+        if (socket) {
+            socket.close();
+        }
+    }
+</script>
